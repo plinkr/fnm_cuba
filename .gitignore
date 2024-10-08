@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .aider*
+
+web/sqflite_sw.js
+
+web/sqlite3.wasm
