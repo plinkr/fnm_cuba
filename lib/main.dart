@@ -5,73 +5,79 @@ import 'buscador.dart';
 import 'indice_medicamentos.dart';
 // import 'plantas_medicinales.dart';
 
+// Inicializa la app inmediatamente
 void main() {
   runApp(FormularioNacionalApp());
 }
 
-class FormularioNacionalApp extends StatefulWidget {
+class FormularioNacionalApp extends StatelessWidget {
   const FormularioNacionalApp({super.key});
 
   @override
-  _FormularioNacionalAppState createState() => _FormularioNacionalAppState();
+  Widget build(BuildContext context) {
+    // Muestra la app inmediatamente con un indicador de carga
+    return MaterialApp(
+      title: 'Formulario Nacional de Medicamentos de Cuba',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.blue[50], // Fondo azul claro
+        appBarTheme: AppBarTheme(
+          color: Colors.blue[700], // Color de la AppBar
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[500], // Color de fondo del botón
+            foregroundColor: Colors.black, // Color del texto del botón
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0), // Botones redondeados
+            ),
+            elevation: 8.0, // Sombra
+            padding: EdgeInsets.all(20.0), // Espaciado interno
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.blue[700], // Color del FloatingActionButton
+        ),
+      ),
+      home: InitializationWrapper(),
+    );
+  }
 }
 
-class _FormularioNacionalAppState extends State<FormularioNacionalApp> {
-  // Agrega un Future para la inicialización de la base de datos
-  late Future<void> _initDbFuture;
+// Widget para manejar la inicialización
+class InitializationWrapper extends StatefulWidget {
+  const InitializationWrapper({super.key});
+
+  @override
+  _InitializationWrapperState createState() => _InitializationWrapperState();
+}
+
+class _InitializationWrapperState extends State<InitializationWrapper> {
+  late Future<void> _initFuture;
 
   @override
   void initState() {
     super.initState();
-    // Inicializa la base de datos solo la primera vez
-    _initDbFuture = _initDatabase();
+    // Inicia la inicialización de manera asíncrona
+    _initFuture = _initializeApp();
   }
 
-  Future<void> _initDatabase() async {
-    // Inicializa la base de datos desde WebDatabaseHelper
+  Future<void> _initializeApp() async {
+    // Inicializa la base de datos
     await WebDatabaseHelper().database;
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: _initDbFuture, // Espera a que la BD se inicialice
+      future: _initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return MaterialApp(
-            title: 'Formulario Nacional de Medicamentos de Cuba',
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-              scaffoldBackgroundColor: Colors.blue[50], // Fondo azul claro
-              appBarTheme: AppBarTheme(
-                color: Colors.blue[700], // Color de la AppBar
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[500], // Color de fondo del botón
-                  foregroundColor: Colors.black, // Color del texto del botón
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(12.0), // Botones redondeados
-                  ),
-                  elevation: 8.0, // Sombra
-                  padding: EdgeInsets.all(20.0), // Espaciado interno
-                ),
-              ),
-              floatingActionButtonTheme: FloatingActionButtonThemeData(
-                backgroundColor:
-                    Colors.blue[700], // Color del FloatingActionButton
-              ),
-            ),
-            home: FormularioNacionalPage(),
-          );
+          return FormularioNacionalPage(); // Página principal
         } else {
-          // Muestra un indicador de carga mientras se inicializa la BD
-          return MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(), // Indicador de carga
-              ),
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(), // Indicador de carga
             ),
           );
         }

@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart';
+import 'package:archive/archive_io.dart';
 
 class WebDatabaseHelper {
   static final WebDatabaseHelper _instance = WebDatabaseHelper._internal();
@@ -24,18 +25,24 @@ class WebDatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
+    // Esto sería para usarlo en otras plataformas, por ahora no tiene uso
     String dbPath = 'assets/fnm.db';
 
     if (kIsWeb) {
       var databaseFactory = databaseFactoryFfiWeb;
 
-      // Cargamos la base de datos desde assets
-      final data = await rootBundle.load(url.join('assets', 'fnm.db'));
-      final bytes =
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      // Cargamos la BD comprimida con XZ desde assets
+      final compressedData =
+          await rootBundle.load(url.join('assets', 'fnm.db.xz'));
+      final compressedBytes = compressedData.buffer.asUint8List(
+          compressedData.offsetInBytes, compressedData.lengthInBytes);
+
+      // Descomprimimos los bytes
+      final decompressedBytes = await decompressBytes(compressedBytes);
 
       // Escribimos los bytes en la base de datos web
-      await databaseFactory.writeDatabaseBytes('formulario_web.db', bytes);
+      await databaseFactory.writeDatabaseBytes(
+          'formulario_web.db', decompressedBytes);
 
       // Abrimos la base de datos en modo solo lectura
       return await databaseFactory.openDatabase('formulario_web.db',
@@ -52,6 +59,13 @@ class WebDatabaseHelper {
       await _database!.close();
       _database = null;
     }
+  }
+
+  // Método para descomprimir el archivo usando archive_io
+  Future<Uint8List> decompressBytes(Uint8List compressedBytes) async {
+    // Descomprimimos los bytes usando la biblioteca 'archive' con XZDecoder
+    final archive = XZDecoder().decodeBytes(compressedBytes);
+    return Uint8List.fromList(archive);
   }
 
   Future<List<Map<String, dynamic>>> searchMedicineByProductoOrCategoria(
