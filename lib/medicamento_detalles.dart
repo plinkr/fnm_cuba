@@ -3,6 +3,7 @@ import 'package:fnm_cuba/get_icon_for_presentation.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 import 'web_database_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'calculadora_dosis.dart';
 
 class MedicamentoDetalleScreen extends StatefulWidget {
   final int id;
@@ -211,6 +212,7 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
           ),
         ),
       ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
@@ -259,15 +261,66 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.all(10.0),
-          child: content is String
-              ? Text(
-                  content,
-                  style: TextStyle(fontSize: 20),
-                )
-              : content,
+          child: content is String ? _buildRichText(content) : content,
         ),
       ],
     );
+  }
+
+  Widget _buildRichText(String text) {
+    List<TextSpan> spans = [];
+    RegExp exp = RegExp(r'<i>(.*?)</i>|([^<]+)');
+    Iterable<RegExpMatch> matches = exp.allMatches(text);
+
+    TextStyle defaultStyle = TextStyle(
+      fontSize: 20,
+      color: Colors.black87, // Color de texto predeterminado
+    );
+
+    for (var match in matches) {
+      if (match.group(1) != null) {
+        // Texto dentro de las etiquetas <i>
+        spans.add(TextSpan(
+          text: match.group(1),
+          style: defaultStyle.copyWith(fontStyle: FontStyle.italic),
+        ));
+      } else if (match.group(2) != null) {
+        // Texto fuera de las etiquetas <i>
+        spans.add(TextSpan(
+          text: match.group(2),
+          style: defaultStyle,
+        ));
+      }
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: defaultStyle,
+        children: spans,
+      ),
+    );
+  }
+
+  Widget? _buildFloatingActionButton() {
+    if (_medicamento != null && (_medicamento!['Dosis']?.isNotEmpty ?? false)) {
+      return FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CalculadoraDosisScreen(
+                dosis: _medicamento!['Dosis'],
+                producto: _medicamento!['Producto'],
+                presentacion: _buildPresentacion(),
+              ),
+            ),
+          );
+        },
+        backgroundColor: Colors.blue[700],
+        child: Icon(Icons.calculate),
+      );
+    }
+    return null;
   }
 
   Widget _buildPoblacEspecContent() {
@@ -278,8 +331,18 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
       children: parts.map<Widget>((part) {
         final icon = _getIconForPoblacEspec(part);
         return ListTile(
-          leading: icon,
-          title: Text(part),
+          contentPadding: EdgeInsets.symmetric(
+              horizontal: 2.0), // Ajustar el padding horizontal
+          leading: Padding(
+            padding: const EdgeInsets.only(
+                right: 2.0), // Ajustar el padding derecho del icono
+            child: icon,
+          ),
+          title: Text(part,
+              style: TextStyle(
+                color: Colors.black, // Color de texto
+                fontSize: 20,
+              )),
         );
       }).toList(),
     );
@@ -302,12 +365,16 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
       assetName = 'assets/child_program.svg.vec';
     }
 
-    return SvgPicture(
-      AssetBytesLoader(assetName),
-      width: 90,
-      height: 90,
-      colorFilter: ColorFilter.mode(
-          Colors.blueGrey[800] ?? Colors.black, BlendMode.srcIn),
+    return Padding(
+      padding: const EdgeInsets.only(
+          right: 2.0), // Ajustar el padding derecho del icono
+      child: SvgPicture(
+        AssetBytesLoader(assetName),
+        width: 80,
+        height: 80,
+        colorFilter: ColorFilter.mode(
+            Colors.blueGrey[800] ?? Colors.black, BlendMode.srcIn),
+      ),
     );
   }
 }
